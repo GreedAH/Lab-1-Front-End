@@ -5,6 +5,7 @@ type RequestMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 interface FetchOptions extends RequestInit {
   method: RequestMethod;
   data?: unknown;
+  requiresAuth?: boolean;
 }
 
 interface ApiError {
@@ -12,19 +13,39 @@ interface ApiError {
   status: number;
 }
 
+// Function to get the current access token
+const getAccessToken = (): string | null => {
+  try {
+    return localStorage.getItem("accessToken");
+  } catch (error) {
+    console.warn("Failed to get access token from localStorage:", error);
+    return null;
+  }
+};
+
 export async function api<T>(
   endpoint: string,
   options: FetchOptions = { method: "GET" }
 ): Promise<T> {
-  console.log("API_BASE_URL", API_BASE_URL);
-  const { data, headers: customHeaders, ...customOptions } = options;
+  const {
+    data,
+    headers: customHeaders,
+    requiresAuth = true,
+    ...customOptions
+  } = options;
 
   const headers = new Headers({
     "Content-Type": "application/json",
     ...customHeaders,
-    // Authorization header - commented out for now
-    // Authorization: `Bearer ${localStorage.getItem('token')}`,
   });
+
+  // Add Authorization header if authentication is required
+  if (requiresAuth) {
+    const accessToken = getAccessToken();
+    if (accessToken) {
+      headers.set("Authorization", `Bearer ${accessToken}`);
+    }
+  }
 
   const config: RequestInit = {
     ...customOptions,
@@ -44,6 +65,13 @@ export async function api<T>(
     const result = await response.json();
 
     if (!response.ok) {
+      // Handle specific error cases
+      if (response.status === 401) {
+        // Token might be expired or invalid
+        // You might want to trigger a token refresh here or redirect to login
+        throw new Error("Authentication required");
+      }
+
       const error: ApiError = {
         message: result.message || "An error occurred",
         status: response.status,

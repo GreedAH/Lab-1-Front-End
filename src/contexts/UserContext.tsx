@@ -117,7 +117,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   }, [refreshToken, isLoading]);
 
   const clearAuth = () => {
-    console.log("Clearing authentication state");
     setUser(null);
     setAccessToken(null);
     setRefreshToken(null);
@@ -134,7 +133,6 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     isLoading,
   };
 
-  console.log("UserProvider rendering with state:", { user, isLoading });
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 };
