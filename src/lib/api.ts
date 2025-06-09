@@ -8,7 +8,7 @@ interface FetchOptions extends RequestInit {
   requiresAuth?: boolean;
 }
 
-interface ApiError {
+export interface ApiError {
   message: string;
   status: number;
 }

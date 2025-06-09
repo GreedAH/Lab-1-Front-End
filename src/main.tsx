@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import App from "./App.tsx";
 import "./index.css";
 import { UserProvider } from "./contexts/UserContext.tsx";
+// import { Toaster } from "@/components/ui/sonner";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -21,6 +22,7 @@ root.render(
     <QueryClientProvider client={queryClient}>
       <UserProvider>
         <App />
+        {/* <Toaster /> */}
       </UserProvider>
     </QueryClientProvider>
   </StrictMode>

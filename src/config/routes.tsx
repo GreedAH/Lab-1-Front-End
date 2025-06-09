@@ -2,6 +2,8 @@ import type { RouteObject } from "react-router-dom";
 import LogIn from "@/components/login";
 import Dashboard from "@/components/dashboard";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import SuperAdminUserManagement from "@/routes/protected/SuperAdminUserManagement";
+import { Role } from "@/types/enums";
 
 // Public routes - accessible to everyone
 export const publicRoutes: RouteObject[] = [
@@ -26,6 +28,14 @@ export const privateRoutes: RouteObject[] = [
     element: (
       <ProtectedRoute>
         <Dashboard />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/users/create",
+    element: (
+      <ProtectedRoute allowedRoles={[Role.SUPER_ADMIN]}>
+        <SuperAdminUserManagement />
       </ProtectedRoute>
     ),
   },
