@@ -3,13 +3,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useNavigate, useLocation } from "react-router-dom";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
 import { useLogin } from "@/hooks/mutations/auth/useLogin";
 import { useUser } from "@/contexts/UserContext";
@@ -56,38 +49,60 @@ function LogIn() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <Card className="w-[350px]">
-        <CardHeader>
-          <CardTitle>Login</CardTitle>
-          <CardDescription>
-            Enter your credentials to access your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+    <div className="flex w-screen h-screen">
+      {/* Left Section - Gradient Background */}
+      <div className="w-1/2 bg-gradient-to-br from-purple-500 via-pink-500 to-orange-500 flex items-center justify-center">
+        <h1 className="text-white text-5xl font-bold text-center leading-tight tracking-tight">
+          A Place
+          <br />
+          for the Youth
+        </h1>
+      </div>
+
+      {/* Right Section - Login Form */}
+      <div className="w-1/2 bg-white flex items-center justify-center p-8">
+        <div className="w-[400px] max-w-full">
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+              Welcome back
+            </h2>
+            <p className="text-gray-600">
+              Enter your credentials to access your account
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium">
+              <label
+                htmlFor="email"
+                className="text-sm font-medium text-gray-700"
+              >
                 Email
               </label>
               <Input
                 id="email"
                 type="email"
                 placeholder="Enter your email"
+                className="w-full"
                 {...register("email")}
               />
               {errors.email && (
                 <p className="text-sm text-red-500">{errors.email.message}</p>
               )}
             </div>
+
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium">
+              <label
+                htmlFor="password"
+                className="text-sm font-medium text-gray-700"
+              >
                 Password
               </label>
               <Input
                 id="password"
                 type="password"
                 placeholder="Enter your password"
+                className="w-full"
                 {...register("password")}
               />
               {errors.password && (
@@ -96,12 +111,17 @@ function LogIn() {
                 </p>
               )}
             </div>
-            <Button type="submit" className="w-full" disabled={isLoggingIn}>
+
+            <Button
+              type="submit"
+              className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white font-medium py-2.5"
+              disabled={isLoggingIn}
+            >
               {isLoggingIn ? "Logging in..." : "Login"}
             </Button>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

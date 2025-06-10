@@ -4,6 +4,7 @@ import Dashboard from "@/components/dashboard";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import SuperAdminUserManagement from "@/routes/protected/SuperAdminUserManagement";
 import { Role } from "@/types/enums";
+import AdminUserManagement from "@/routes/protected/AdminUserManagement";
 
 // Public routes - accessible to everyone
 export const publicRoutes: RouteObject[] = [
@@ -36,6 +37,14 @@ export const privateRoutes: RouteObject[] = [
     element: (
       <ProtectedRoute allowedRoles={[Role.SUPER_ADMIN]}>
         <SuperAdminUserManagement />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/admin/create",
+    element: (
+      <ProtectedRoute allowedRoles={[Role.SUPER_ADMIN, Role.ADMIN]}>
+        <AdminUserManagement />
       </ProtectedRoute>
     ),
   },

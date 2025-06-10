@@ -1,5 +1,6 @@
 import { Navigate, useLocation } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
+import { Navigation } from "../navigation";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -29,5 +30,10 @@ export function ProtectedRoute({
   }
 
   // User is authenticated and authorized
-  return <>{children}</>;
+  return (
+    <>
+      <Navigation />
+      {children}
+    </>
+  );
 }

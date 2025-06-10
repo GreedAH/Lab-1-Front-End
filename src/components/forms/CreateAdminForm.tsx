@@ -35,7 +35,7 @@ const userFormSchema = z.object({
 
 type UserFormValues = z.infer<typeof userFormSchema>;
 
-export function CreateUserForm() {
+export function CreateAdminForm() {
   const createUser = useCreateUser();
   const {
     register,
@@ -60,14 +60,14 @@ export function CreateUserForm() {
     try {
       await createUser.mutateAsync({
         ...data,
-        role: Role.SUPER_ADMIN,
+        role: Role.ADMIN,
         birthday: format(data.birthday, "yyyy-MM-dd"),
       });
-      toast.success("Super Admin created successfully");
+      toast.success("Admin created successfully");
       reset();
     } catch (error) {
       const apiError = error as ApiError;
-      toast.error(apiError.message || "Failed to create Super Admin");
+      toast.error(apiError.message || "Failed to create Admin");
     }
   };
 
@@ -195,7 +195,7 @@ export function CreateUserForm() {
         className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:from-purple-600 hover:via-pink-600 hover:to-orange-600 text-white font-medium py-2.5"
         disabled={createUser.isPending}
       >
-        {createUser.isPending ? "Creating..." : "Create Super Admin"}
+        {createUser.isPending ? "Creating..." : "Create Admin"}
       </Button>
     </form>
   );
