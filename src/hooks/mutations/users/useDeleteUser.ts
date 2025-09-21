@@ -1,12 +1,13 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createUser, type UserCreateInput } from "@/api/users";
+import { deleteUser } from "@/api/users";
 
-export const useCreateUser = () => {
+export const useDeleteUser = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: UserCreateInput) => createUser(data),
+    mutationFn: (id: number) => deleteUser(id),
     onSuccess: () => {
+      // Invalidate and refetch user queries
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
   });

@@ -37,13 +37,30 @@ export const getUserById = (id: number) =>
     method: "GET",
   });
 
-export const updateUser = (id: number, data: Partial<UserCreateInput>) =>
+export const deleteUser = (id: number) =>
+  api<{
+    message: string;
+    user: Pick<User, "id" | "firstName" | "lastName" | "email">;
+  }>(`/users/${id}`, {
+    method: "DELETE",
+    requiresAuth: true,
+  });
+
+export const getUsersByRole = (role: Role) =>
+  api<User[]>(`/users?role=${role}`, {
+    method: "GET",
+    requiresAuth: true,
+  });
+
+export interface UserUpdateInput {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+export const updateUser = (id: number, data: UserUpdateInput) =>
   api<User>(`/users/${id}`, {
     method: "PUT",
     data,
-  });
-
-export const deleteUser = (id: number) =>
-  api(`/users/${id}`, {
-    method: "DELETE",
+    requiresAuth: true,
   });
