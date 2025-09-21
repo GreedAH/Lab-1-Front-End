@@ -7,6 +7,8 @@ import { Role } from "@/types/enums";
 import AdminUserManagement from "@/routes/protected/AdminUserManagement";
 import AdminUsersList from "@/routes/protected/AdminUsersList";
 import EditAdminUser from "@/routes/protected/EditAdminUser";
+import { EventManagement } from "@/routes/protected/EventManagement";
+import { EventsList } from "@/routes/protected/EventsList";
 
 // Public routes - accessible to everyone
 export const publicRoutes: RouteObject[] = [
@@ -63,6 +65,24 @@ export const privateRoutes: RouteObject[] = [
     element: (
       <ProtectedRoute allowedRoles={[Role.SUPER_ADMIN, Role.ADMIN]}>
         <EditAdminUser />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/events/create",
+    element: (
+      <ProtectedRoute allowedRoles={[Role.SUPER_ADMIN, Role.ADMIN]}>
+        <EventManagement />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/events",
+    element: (
+      <ProtectedRoute
+        allowedRoles={[Role.SUPER_ADMIN, Role.ADMIN, Role.CLIENT]}
+      >
+        <EventsList />
       </ProtectedRoute>
     ),
   },
