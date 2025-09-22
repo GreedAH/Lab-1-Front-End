@@ -1,4 +1,5 @@
 import { api } from "@/lib/api";
+import { EventStatus } from "@/types/enums";
 
 export interface EventCreateInput {
   name: string;
@@ -8,7 +9,7 @@ export interface EventCreateInput {
   venue: string;
   country: string;
   city: string;
-  status?: "OPEN" | "CLOSED" | "CANCELLED";
+  status?: EventStatus;
   maxCapacity: number;
   price: number;
 }
@@ -22,7 +23,7 @@ export interface Event {
   venue: string;
   country: string;
   city: string;
-  status: "OPEN" | "CLOSED" | "CANCELLED";
+  status: EventStatus;
   maxCapacity: number;
   price: number;
   createdAt: string;
@@ -36,7 +37,7 @@ export const createEvent = (data: EventCreateInput) =>
   });
 
 export interface GetAllEventsParams {
-  status?: "OPEN" | "CLOSED" | "CANCELLED";
+  status?: EventStatus;
   country?: string;
   city?: string;
 }
@@ -54,6 +55,30 @@ export const getAllEvents = (params?: GetAllEventsParams) => {
     method: "GET",
   });
 };
+
+export const getEventById = (id: number) =>
+  api<Event>(`/events/${id}`, {
+    method: "GET",
+  });
+
+export interface EventUpdateInput {
+  name?: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  venue?: string;
+  country?: string;
+  city?: string;
+  status?: EventStatus;
+  maxCapacity?: number;
+  price?: number;
+}
+
+export const updateEvent = (id: number, data: EventUpdateInput) =>
+  api<Event>(`/events/${id}`, {
+    method: "PUT",
+    data,
+  });
 
 export interface DeleteEventResponse {
   message: string;

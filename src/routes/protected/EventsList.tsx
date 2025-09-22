@@ -1,9 +1,17 @@
 import { useGetAllEvents } from "@/hooks/queries/events/useGetAllEvents";
 import { useDeleteEvent } from "@/hooks/mutations/events/useDeleteEvent";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Users, DollarSign, Trash2 } from "lucide-react";
+import {
+  Calendar,
+  MapPin,
+  Users,
+  DollarSign,
+  Trash2,
+  Edit3,
+} from "lucide-react";
 import { format } from "date-fns";
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import type { ApiError } from "@/lib/api";
 
@@ -11,6 +19,7 @@ export function EventsList() {
   const { data: events, isLoading, error } = useGetAllEvents();
   const deleteEvent = useDeleteEvent();
   const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
+  const navigate = useNavigate();
 
   const handleDeleteEvent = async (eventId: number, eventName: string) => {
     if (
@@ -128,16 +137,28 @@ export function EventsList() {
                         </div>
                       </div>
                     </div>
-                    <Button
-                      onClick={() => handleDeleteEvent(event.id, event.name)}
-                      variant="outline"
-                      size="sm"
-                      className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
-                      disabled={deletingEventId === event.id}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      {deletingEventId === event.id ? "Deleting..." : "Delete"}
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={() => navigate(`/events/${event.id}/edit`)}
+                        variant="outline"
+                        size="sm"
+                        className="text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
+                      >
+                        <Edit3 className="w-4 h-4" /> Edit
+                      </Button>
+                      <Button
+                        onClick={() => handleDeleteEvent(event.id, event.name)}
+                        variant="outline"
+                        size="sm"
+                        className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
+                        disabled={deletingEventId === event.id}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        {deletingEventId === event.id
+                          ? "Deleting..."
+                          : "Delete"}
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">

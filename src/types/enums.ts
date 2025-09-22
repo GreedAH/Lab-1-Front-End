@@ -3,3 +3,10 @@ export enum Role {
   ADMIN = "ADMIN",
   CLIENT = "CLIENT",
 }
+
+export enum EventStatus {
+  OPEN = "OPEN",
+  ONGOING = "ONGOING",
+  CANCELLED = "CANCELLED",
+  DONE = "DONE",
+}

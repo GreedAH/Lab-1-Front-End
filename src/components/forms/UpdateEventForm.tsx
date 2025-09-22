@@ -1,7 +1,7 @@
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useCreateEvent } from "@/hooks/mutations/events/useCreateEvent";
+import { useUpdateEvent } from "@/hooks/mutations/events/useUpdateEvent";
 import { toast } from "sonner";
 import type { ApiError } from "@/lib/api";
 import { Input } from "@/components/ui/input";
@@ -23,94 +23,126 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useMemo } from "react";
 import { EventStatus } from "@/types/enums";
+import { useGetEventById } from "@/hooks/queries/events/useGetEventById";
+import type { EventUpdateInput } from "@/api/events";
+import { useNavigate } from "react-router-dom";
 
-const eventFormSchema = z.object({
-  name: z.string().min(2, "Event name must be at least 2 characters"),
-  eventType: z.enum(["single", "multiple"], {
-    required_error: "Please select an event type",
-  }),
-  startDate: z.date({
-    required_error: "Please select a start date",
-  }),
-  endDate: z.date({
-    required_error: "Please select an end date",
-  }),
-  venue: z.string().min(2, "Venue must be at least 2 characters"),
-  country: z.string().min(2, "Country must be at least 2 characters"),
-  city: z.string().min(2, "City must be at least 2 characters"),
+const updateEventFormSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Event name must be at least 2 characters")
+    .optional(),
+  eventType: z.enum(["single", "multiple"]).optional(),
+  startDate: z.date().optional(),
+  endDate: z.date().optional(),
+  venue: z.string().min(2, "Venue must be at least 2 characters").optional(),
+  country: z
+    .string()
+    .min(2, "Country must be at least 2 characters")
+    .optional(),
+  city: z.string().min(2, "City must be at least 2 characters").optional(),
   maxCapacity: z
     .number()
     .min(1, "Max capacity must be at least 1")
-    .int("Max capacity must be a whole number"),
-  price: z.number().min(0, "Price cannot be negative"),
-  description: z.string().min(10, "Description must be at least 10 characters"),
+    .int("Max capacity must be a whole number")
+    .optional(),
+  price: z.number().min(0, "Price cannot be negative").optional(),
+  description: z
+    .string()
+    .min(10, "Description must be at least 10 characters")
+    .optional(),
+  status: z.nativeEnum(EventStatus).optional(),
 });
 
-type EventFormValues = z.infer<typeof eventFormSchema>;
+type UpdateEventFormValues = z.infer<typeof updateEventFormSchema>;
 
-export function CreateEventForm() {
-  const createEvent = useCreateEvent();
-  const [eventType, setEventType] = useState<"single" | "multiple">("single");
+export function UpdateEventForm({ eventId }: { eventId: number }) {
+  const mutateUpdate = useUpdateEvent();
+  const navigate = useNavigate();
+
+  const statusOptions = useMemo(
+    () => [
+      { label: "Open", value: EventStatus.OPEN },
+      { label: "Ongoing", value: EventStatus.ONGOING },
+      { label: "Cancelled", value: EventStatus.CANCELLED },
+      { label: "Done", value: EventStatus.DONE },
+    ],
+    []
+  );
+
+  const {
+    data: event,
+    isLoading,
+    error: eventError,
+  } = useGetEventById(eventId, { enabled: !!eventId });
 
   const {
     register,
     handleSubmit,
-    reset,
     setValue,
     watch,
     formState: { errors },
-  } = useForm<EventFormValues>({
-    resolver: zodResolver(eventFormSchema),
-    defaultValues: {
-      name: "",
-      eventType: "single",
-      venue: "",
-      country: "",
-      city: "",
-      maxCapacity: 1,
-      price: 0,
-      description: "",
-    },
+    reset,
+    control,
+  } = useForm<UpdateEventFormValues>({
+    resolver: zodResolver(updateEventFormSchema),
+    defaultValues: {},
   });
 
   const startDate = watch("startDate");
   const endDate = watch("endDate");
+  const eventType = watch("eventType");
 
-  const onSubmit = async (data: EventFormValues) => {
-    try {
-      // For single day events, set endDate to startDate
-      const finalEndDate =
-        eventType === "single" ? data.startDate : data.endDate;
+  // Reset form when event data is loaded
+  useEffect(() => {
+    if (event) {
+      const start = event.startDate ? new Date(event.startDate) : undefined;
+      const end = event.endDate ? new Date(event.endDate) : undefined;
 
-      await createEvent.mutateAsync({
-        name: data.name,
-        description: data.description,
-        startDate: format(data.startDate, "yyyy-MM-dd"),
-        endDate: format(finalEndDate, "yyyy-MM-dd"),
-        venue: data.venue,
-        country: data.country,
-        city: data.city,
-        status: EventStatus.OPEN,
-        maxCapacity: data.maxCapacity,
-        price: data.price,
+      // Determine event type based on dates
+      const isMultiple = start && end && start.getTime() !== end.getTime();
+
+      reset({
+        name: event.name,
+        description: event.description,
+        venue: event.venue,
+        country: event.country,
+        city: event.city,
+        maxCapacity: event.maxCapacity,
+        price: event.price,
+        status: event.status,
+        eventType: isMultiple ? "multiple" : "single",
+        startDate: start,
+        endDate: end,
       });
-      toast.success("Event created successfully");
-      reset();
-      setEventType("single");
+    }
+  }, [event, reset]);
+
+  const onSubmit = async (data: UpdateEventFormValues) => {
+    try {
+      const payload: Partial<EventUpdateInput> = {
+        ...data,
+      } as Partial<EventUpdateInput>;
+      if (data.startDate)
+        payload.startDate = format(data.startDate, "yyyy-MM-dd");
+      if (data.endDate) payload.endDate = format(data.endDate, "yyyy-MM-dd");
+
+      await mutateUpdate.mutateAsync({ id: eventId, data: payload });
+      toast.success("Event updated successfully");
+      navigate("/events");
     } catch (error) {
       const apiError = error as ApiError;
-      toast.error(apiError.message || "Failed to create event");
+      toast.error(apiError.message || "Failed to update event");
     }
   };
 
   const handleEventTypeChange = (value: "single" | "multiple") => {
-    setEventType(value);
     setValue("eventType", value);
 
-    // If switching to single day, clear endDate
-    if (value === "single") {
+    // If switching to single day, set endDate to startDate
+    if (value === "single" && startDate) {
       setValue("endDate", startDate);
     }
   };
@@ -124,6 +156,30 @@ export function CreateEventForm() {
       }
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+        <p className="mt-4 text-gray-600">Loading event data...</p>
+      </div>
+    );
+  }
+
+  if (eventError || !event) {
+    return (
+      <div className="text-center">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-red-800 mb-2">
+            Event Not Found
+          </h3>
+          <p className="text-red-600">
+            The event you're trying to edit could not be found.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -152,22 +208,68 @@ export function CreateEventForm() {
           <label className="block text-sm font-medium text-gray-700">
             Event Type
           </label>
-          <Select value={eventType} onValueChange={handleEventTypeChange}>
-            <SelectTrigger className="w-full border-gray-200 focus:border-purple-500 focus:ring-purple-500">
-              <SelectValue placeholder="Select event type" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="single">Single Day Event</SelectItem>
-              <SelectItem value="multiple">Multiple Day Event</SelectItem>
-            </SelectContent>
-          </Select>
+          <Controller
+            name="eventType"
+            control={control}
+            render={({ field }) => (
+              <Select
+                value={!isLoading ? field.value || "" : ""}
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  handleEventTypeChange(value as "single" | "multiple");
+                }}
+                key={!isLoading ? field.value || "" : ""}
+              >
+                <SelectTrigger className="w-full border-gray-200 focus:border-purple-500 focus:ring-purple-500">
+                  <SelectValue placeholder="Select event type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="single">Single Day Event</SelectItem>
+                  <SelectItem value="multiple">Multiple Day Event</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          />
           {errors.eventType && (
             <p className="text-sm text-red-500">{errors.eventType.message}</p>
           )}
         </div>
       </div>
 
-      {/* Date Selection */}
+      {/* Status */}
+      <div className="space-y-2">
+        <label className="block text-sm font-medium text-gray-700">
+          Status
+        </label>
+        <Controller
+          name="status"
+          control={control}
+          render={({ field }) => (
+            <Select
+              value={!isLoading ? field.value || "" : ""}
+              onValueChange={field.onChange}
+              key={!isLoading ? field.value || "" : ""}
+            >
+              <SelectTrigger className="w-full border-gray-200 focus:border-purple-500 focus:ring-purple-500">
+                <SelectValue placeholder="Select status" />
+              </SelectTrigger>
+              <SelectContent>
+                {statusOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        {errors.status && (
+          <p className="text-sm text-red-500">
+            {errors.status.message as string}
+          </p>
+        )}
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <label className="block text-sm font-medium text-gray-700">
@@ -204,7 +306,9 @@ export function CreateEventForm() {
             </PopoverContent>
           </Popover>
           {errors.startDate && (
-            <p className="text-sm text-red-500">{errors.startDate.message}</p>
+            <p className="text-sm text-red-500">
+              {errors.startDate.message as string}
+            </p>
           )}
         </div>
 
@@ -239,7 +343,7 @@ export function CreateEventForm() {
                     date && setValue("endDate", date)
                   }
                   disabled={(date: Date) =>
-                    date < new Date() || (startDate && date < startDate)
+                    date < new Date() || (!!startDate && date < startDate)
                   }
                   captionLayout="dropdown-years"
                   defaultMonth={endDate || startDate || new Date()}
@@ -248,13 +352,14 @@ export function CreateEventForm() {
               </PopoverContent>
             </Popover>
             {errors.endDate && (
-              <p className="text-sm text-red-500">{errors.endDate.message}</p>
+              <p className="text-sm text-red-500">
+                {errors.endDate.message as string}
+              </p>
             )}
           </div>
         )}
       </div>
 
-      {/* Location Fields */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="space-y-2">
           <label
@@ -267,7 +372,7 @@ export function CreateEventForm() {
             id="venue"
             type="text"
             {...register("venue")}
-            placeholder="Enter venue"
+            placeholder="Update venue"
             className="w-full border-gray-200 focus:border-purple-500 focus:ring-purple-500"
           />
           {errors.venue && (
@@ -286,7 +391,7 @@ export function CreateEventForm() {
             id="country"
             type="text"
             {...register("country")}
-            placeholder="Enter country"
+            placeholder="Update country"
             className="w-full border-gray-200 focus:border-purple-500 focus:ring-purple-500"
           />
           {errors.country && (
@@ -305,7 +410,7 @@ export function CreateEventForm() {
             id="city"
             type="text"
             {...register("city")}
-            placeholder="Enter city"
+            placeholder="Update city"
             className="w-full border-gray-200 focus:border-purple-500 focus:ring-purple-500"
           />
           {errors.city && (
@@ -314,7 +419,6 @@ export function CreateEventForm() {
         </div>
       </div>
 
-      {/* Capacity and Price */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div className="space-y-2">
           <label
@@ -327,7 +431,7 @@ export function CreateEventForm() {
             id="maxCapacity"
             type="number"
             {...register("maxCapacity", { valueAsNumber: true })}
-            placeholder="Enter max capacity"
+            placeholder="Update max capacity"
             min="1"
             className="w-full border-gray-200 focus:border-purple-500 focus:ring-purple-500"
           />
@@ -347,7 +451,7 @@ export function CreateEventForm() {
             id="price"
             type="number"
             {...register("price", { valueAsNumber: true })}
-            placeholder="Enter price"
+            placeholder="Update price"
             min="0"
             step="0.01"
             className="w-full border-gray-200 focus:border-purple-500 focus:ring-purple-500"
@@ -358,7 +462,6 @@ export function CreateEventForm() {
         </div>
       </div>
 
-      {/* Description */}
       <div className="space-y-2">
         <label
           htmlFor="description"
@@ -369,7 +472,7 @@ export function CreateEventForm() {
         <Textarea
           id="description"
           {...register("description")}
-          placeholder="Enter event description..."
+          placeholder="Update description..."
           rows={4}
           className="w-full border-gray-200 focus:border-purple-500 focus:ring-purple-500"
         />
@@ -381,9 +484,9 @@ export function CreateEventForm() {
       <Button
         type="submit"
         className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 hover:from-purple-600 hover:via-pink-600 hover:to-orange-600 text-white font-medium py-2.5"
-        disabled={createEvent.isPending}
+        disabled={mutateUpdate.isPending}
       >
-        {createEvent.isPending ? "Creating..." : "Create Event"}
+        {mutateUpdate.isPending ? "Updating..." : "Update Event"}
       </Button>
     </form>
   );

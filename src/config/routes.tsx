@@ -9,6 +9,7 @@ import AdminUsersList from "@/routes/protected/AdminUsersList";
 import EditAdminUser from "@/routes/protected/EditAdminUser";
 import { EventManagement } from "@/routes/protected/EventManagement";
 import { EventsList } from "@/routes/protected/EventsList";
+import EditEvent from "@/routes/protected/EditEvent";
 
 // Public routes - accessible to everyone
 export const publicRoutes: RouteObject[] = [
@@ -83,6 +84,14 @@ export const privateRoutes: RouteObject[] = [
         allowedRoles={[Role.SUPER_ADMIN, Role.ADMIN, Role.CLIENT]}
       >
         <EventsList />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/events/:id/edit",
+    element: (
+      <ProtectedRoute allowedRoles={[Role.SUPER_ADMIN, Role.ADMIN]}>
+        <EditEvent />
       </ProtectedRoute>
     ),
   },

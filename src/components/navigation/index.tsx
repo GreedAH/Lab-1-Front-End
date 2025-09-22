@@ -2,11 +2,11 @@ import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import {
   NavigationMenu,
-  // NavigationMenuContent,
+  NavigationMenuContent,
   NavigationMenuItem,
   NavigationMenuLink,
   NavigationMenuList,
-  // NavigationMenuTrigger,
+  NavigationMenuTrigger,
 } from "@/components/ui/navigation-menu";
 import { useUser } from "@/contexts/UserContext";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,8 @@ import {
 } from "@/components/ui/sheet";
 import { Menu } from "lucide-react";
 import { Role } from "@/types/enums";
+import { Logo } from "@/components/shared/logo";
+import { navigationItems, type NavParentItem } from "@/utils/navigationItems";
 
 export function Navigation() {
   const navigate = useNavigate();
@@ -27,28 +29,13 @@ export function Navigation() {
   const { mutate: logout, isPending: isLoggingOut } = useLogout();
   const [isSheetOpen, setIsSheetOpen] = useState(false);
 
-  // Check if user has SUPER_ADMIN role
-  const isSuperAdmin = user?.role === Role.SUPER_ADMIN;
+  // Role helpers are handled via getRoleNavItems
 
-  // Navigation items for SUPER_ADMIN
-  const superAdminNavItems = [
-    {
-      label: "Dashboard",
-      href: "/dashboard",
-    },
-    {
-      label: "Create Super Admin",
-      href: "/admin/users/create",
-    },
-    {
-      label: "Create Admin",
-      href: "/admin/create",
-    },
-    {
-      label: "Manage Users",
-      href: "/admin/users",
-    },
-  ];
+  const getRoleNavItems = (): NavParentItem[] => {
+    if (user?.role === Role.SUPER_ADMIN) return navigationItems.SUPER_ADMIN;
+    if (user?.role === Role.ADMIN) return navigationItems.ADMIN;
+    return [];
+  };
 
   const handleAuthAction = () => {
     if (user) {
@@ -80,21 +67,26 @@ export function Navigation() {
   const DesktopNavItems = () => (
     <NavigationMenu>
       <NavigationMenuList>
-        {/* SUPER_ADMIN specific navigation */}
-        {isSuperAdmin && (
-          <>
-            {superAdminNavItems.map((item) => (
-              <NavigationMenuItem key={item.href}>
-                <NavigationMenuLink
-                  className="bg-white/10 text-white hover:bg-white/20 px-4 py-2 rounded-md cursor-pointer"
-                  onClick={() => handleNavigation(item.href)}
-                >
-                  {item.label}
-                </NavigationMenuLink>
-              </NavigationMenuItem>
-            ))}
-          </>
-        )}
+        {getRoleNavItems().map((parent) => (
+          <NavigationMenuItem key={parent.label}>
+            <NavigationMenuTrigger className="bg-white/10 text-white hover:bg-white/20">
+              {parent.label}
+            </NavigationMenuTrigger>
+            <NavigationMenuContent>
+              <div className="p-4 grid gap-2 min-w-[220px]">
+                {parent.children.map((child) => (
+                  <NavigationMenuLink
+                    key={child.href}
+                    className="px-3 py-2 rounded-md text-sm text-gray-700 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => handleNavigation(child.href)}
+                  >
+                    {child.label}
+                  </NavigationMenuLink>
+                ))}
+              </div>
+            </NavigationMenuContent>
+          </NavigationMenuItem>
+        ))}
       </NavigationMenuList>
     </NavigationMenu>
   );
@@ -102,25 +94,24 @@ export function Navigation() {
   // Mobile Navigation Items Component
   const MobileNavItems = () => (
     <div className="flex flex-col gap-4">
-      {/* SUPER_ADMIN specific navigation */}
-      {isSuperAdmin && (
-        <div>
+      {getRoleNavItems().map((parent) => (
+        <div key={parent.label}>
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
-            Admin Panel
+            {parent.label}
           </h3>
           <div className="space-y-2">
-            {superAdminNavItems.map((item) => (
+            {parent.children.map((child) => (
               <button
-                key={item.href}
+                key={child.href}
                 className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
-                onClick={() => handleNavigation(item.href)}
+                onClick={() => handleNavigation(child.href)}
               >
-                {item.label}
+                {child.label}
               </button>
             ))}
           </div>
         </div>
-      )}
+      ))}
     </div>
   );
 
@@ -128,11 +119,11 @@ export function Navigation() {
     <div className="w-full bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 p-4">
       <div className="container mx-auto flex items-center justify-between">
         {/* Logo */}
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 via-purple-500 to-pink-500 shadow-lg" />
+        <Logo />
 
         {/* Desktop Navigation */}
         <div className="hidden lg:flex items-center gap-4">
-          {isSuperAdmin && <DesktopNavItems />}
+          <DesktopNavItems />
 
           {/* Auth Button */}
           <Button
@@ -157,7 +148,7 @@ export function Navigation() {
           </Button>
 
           {/* Mobile Menu Sheet - Only show for SUPER_ADMIN */}
-          {isSuperAdmin && (
+          {getRoleNavItems().length > 0 && (
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
                 <Button
