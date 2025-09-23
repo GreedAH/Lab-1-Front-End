@@ -10,25 +10,29 @@ import EditAdminUser from "@/routes/protected/EditAdminUser";
 import { EventManagement } from "@/routes/protected/EventManagement";
 import { EventsList } from "@/routes/protected/EventsList";
 import EditEvent from "@/routes/protected/EditEvent";
+import { ClientEventsList } from "@/routes/protected/ClientEventsList";
+import { CreateReservation } from "@/routes/protected/CreateReservation";
+import { Landing } from "@/routes/public/landing";
+import SignUp from "@/components/signUp";
 
 // Public routes - accessible to everyone
 export const publicRoutes: RouteObject[] = [
   {
+    path: "/",
+    element: <Landing />,
+  },
+  {
     path: "/login",
     element: <LogIn />,
+  },
+  {
+    path: "/sign-up",
+    element: <SignUp />,
   },
 ];
 
 // Private routes - require authentication
 export const privateRoutes: RouteObject[] = [
-  {
-    path: "/",
-    element: (
-      <ProtectedRoute>
-        <Dashboard />
-      </ProtectedRoute>
-    ),
-  },
   {
     path: "/dashboard",
     element: (
@@ -92,6 +96,22 @@ export const privateRoutes: RouteObject[] = [
     element: (
       <ProtectedRoute allowedRoles={[Role.SUPER_ADMIN, Role.ADMIN]}>
         <EditEvent />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/client/events",
+    element: (
+      <ProtectedRoute allowedRoles={[Role.CLIENT]}>
+        <ClientEventsList />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/reserve/:eventId",
+    element: (
+      <ProtectedRoute allowedRoles={[Role.CLIENT]}>
+        <CreateReservation />
       </ProtectedRoute>
     ),
   },

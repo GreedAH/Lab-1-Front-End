@@ -37,19 +37,24 @@ export function Navigation() {
     return [];
   };
 
+  const getClientNavItems = () => {
+    if (user?.role === Role.CLIENT) return navigationItems.CLIENT;
+    return [];
+  };
+
   const handleAuthAction = () => {
     if (user) {
       if (refreshToken) {
         logout(refreshToken, {
           onSuccess: () => {
             clearAuth();
-            navigate("/login");
+            navigate("/");
           },
           onError: (error) => {
             console.error("Logout failed:", error);
             // Still clear the auth state even if the API call fails
             clearAuth();
-            navigate("/login");
+            navigate("/");
           },
         });
       }
@@ -67,6 +72,7 @@ export function Navigation() {
   const DesktopNavItems = () => (
     <NavigationMenu>
       <NavigationMenuList>
+        {/* Admin/Super Admin nested navigation */}
         {getRoleNavItems().map((parent) => (
           <NavigationMenuItem key={parent.label}>
             <NavigationMenuTrigger className="bg-white/10 text-white hover:bg-white/20">
@@ -87,6 +93,17 @@ export function Navigation() {
             </NavigationMenuContent>
           </NavigationMenuItem>
         ))}
+        {/* Client direct navigation */}
+        {getClientNavItems().map((item) => (
+          <NavigationMenuItem key={item.href}>
+            <NavigationMenuLink
+              className="px-4 py-2 rounded-md text-sm bg-white/10 text-white hover:bg-white/20 cursor-pointer"
+              onClick={() => handleNavigation(item.href)}
+            >
+              {item.label}
+            </NavigationMenuLink>
+          </NavigationMenuItem>
+        ))}
       </NavigationMenuList>
     </NavigationMenu>
   );
@@ -94,6 +111,7 @@ export function Navigation() {
   // Mobile Navigation Items Component
   const MobileNavItems = () => (
     <div className="flex flex-col gap-4">
+      {/* Admin/Super Admin nested navigation */}
       {getRoleNavItems().map((parent) => (
         <div key={parent.label}>
           <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
@@ -112,6 +130,25 @@ export function Navigation() {
           </div>
         </div>
       ))}
+      {/* Client direct navigation */}
+      {getClientNavItems().length > 0 && (
+        <div>
+          <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-3">
+            Menu
+          </h3>
+          <div className="space-y-2">
+            {getClientNavItems().map((item) => (
+              <button
+                key={item.href}
+                className="block w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md"
+                onClick={() => handleNavigation(item.href)}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 
@@ -147,8 +184,8 @@ export function Navigation() {
             {isLoggingOut ? "Logging out..." : user ? "Log out" : "Sign in"}
           </Button>
 
-          {/* Mobile Menu Sheet - Only show for SUPER_ADMIN */}
-          {getRoleNavItems().length > 0 && (
+          {/* Mobile Menu Sheet - Show for SUPER_ADMIN, ADMIN, and CLIENT */}
+          {(getRoleNavItems().length > 0 || getClientNavItems().length > 0) && (
             <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
               <SheetTrigger asChild>
                 <Button

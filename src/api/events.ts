@@ -95,3 +95,25 @@ export const deleteEvent = (id: number) =>
   api<DeleteEventResponse>(`/events/${id}`, {
     method: "DELETE",
   });
+
+export interface GetAllEventsPublicParams {
+  country?: string;
+  city?: string;
+}
+
+export const getAllEventsSortedByStatus = (
+  params?: GetAllEventsPublicParams
+) => {
+  const searchParams = new URLSearchParams();
+  if (params?.country) searchParams.append("country", params.country);
+  if (params?.city) searchParams.append("city", params.city);
+
+  const queryString = searchParams.toString();
+  const endpoint = queryString
+    ? `/events/public/sorted?${queryString}`
+    : "/events/public/sorted";
+
+  return api<Event[]>(endpoint, {
+    method: "GET",
+  });
+};

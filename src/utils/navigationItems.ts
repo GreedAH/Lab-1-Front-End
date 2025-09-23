@@ -11,6 +11,7 @@ export type NavParentItem = {
 export type RoleNavItems = {
   SUPER_ADMIN: NavParentItem[];
   ADMIN: NavParentItem[];
+  CLIENT: NavChildItem[];
 };
 
 export const navigationItems: RoleNavItems = {
@@ -39,5 +40,9 @@ export const navigationItems: RoleNavItems = {
         { label: "Manage Events", href: "/events" },
       ],
     },
+  ],
+  CLIENT: [
+    { label: "Events", href: "/client/events" },
+    { label: "Reservations", href: "/dashboard" },
   ],
 };

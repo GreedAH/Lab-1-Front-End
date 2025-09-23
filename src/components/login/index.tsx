@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { loginSchema, type LoginFormData } from "@/lib/validations/auth";
 import { useLogin } from "@/hooks/mutations/auth/useLogin";
 import { useUser } from "@/contexts/UserContext";
+import Logo from "../shared/logo";
 
 function LogIn() {
   const navigate = useNavigate();
@@ -63,12 +64,23 @@ function LogIn() {
       <div className="w-1/2 bg-white flex items-center justify-center p-8">
         <div className="w-[400px] max-w-full">
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">
+            <Logo />
+            <h2 className="text-3xl font-bold text-gray-900 mb-2 mt-5">
               Welcome back
             </h2>
-            <p className="text-gray-600">
-              Enter your credentials to access your account
-            </p>
+            <div className="text-gray-600 flex items-center gap-2 flex-wrap">
+              <span>Enter your credentials to access your account</span>
+              <span className="mx-2 text-gray-300">|</span>
+              <span>No Account. Just sign up to join the fun.</span>
+              <Button
+                type="button"
+                variant="ghost"
+                className="px-2 py-0 h-auto text-purple-600"
+                onClick={() => navigate("/sign-up")}
+              >
+                Sign up
+              </Button>
+            </div>
           </div>
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
