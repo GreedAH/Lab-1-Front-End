@@ -1,59 +1,39 @@
-import { useGetAllEvents } from "@/hooks/queries/events/useGetAllEvents";
-import { useDeleteEvent } from "@/hooks/mutations/events/useDeleteEvent";
-import { Button } from "@/components/ui/button";
-import {
-  Calendar,
-  MapPin,
-  Users,
-  DollarSign,
-  Trash2,
-  Edit3,
-} from "lucide-react";
+import { useGetReservationsByUserId } from "@/hooks/queries/reservation/useGetReservationsByUserId";
 import { format } from "date-fns";
+import { Calendar, MapPin, DollarSign, Trash2 } from "lucide-react";
+import { useUser } from "@/contexts/UserContext";
+import { Button } from "@/components/ui/button";
+import { useCancelReservation } from "@/hooks/mutations/reservation/useCancelReservation";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
-import type { ApiError } from "@/lib/api";
 
-export function EventsList() {
-  const { data: events, isLoading, error } = useGetAllEvents();
-  const deleteEvent = useDeleteEvent();
-  const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
-  const navigate = useNavigate();
+export function ClientReservationsList() {
+  const { user } = useUser();
+  const userId = user?.id;
+  const {
+    data: reservations,
+    isLoading,
+    error,
+  } = useGetReservationsByUserId(userId ?? 0, { includeCancelled: true });
+  const cancelReservation = useCancelReservation();
+  const [cancellingReservationId, setCancellingReservationId] = useState<
+    number | null
+  >(null);
 
-  const handleDeleteEvent = async (eventId: number, eventName: string) => {
-    if (
-      !confirm(
-        `Are you sure you want to delete "${eventName}"? This action cannot be undone.`
-      )
-    ) {
-      return;
-    }
-
-    setDeletingEventId(eventId);
-    try {
-      await deleteEvent.mutateAsync(eventId);
-      toast.success("Event deleted successfully");
-    } catch (error) {
-      const apiError = error as ApiError;
-      toast.error(apiError.message || "Failed to delete event");
-    } finally {
-      setDeletingEventId(null);
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "OPEN":
-        return "bg-green-100 text-green-800 border-green-200";
-      case "CLOSED":
-        return "bg-red-100 text-red-800 border-red-200";
-      case "CANCELLED":
-        return "bg-gray-100 text-gray-800 border-gray-200";
-      default:
-        return "bg-gray-100 text-gray-800 border-gray-200";
-    }
-  };
+  if (!userId) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <h3 className="text-lg font-semibold text-red-800 mb-2">
+            Not Logged In
+          </h3>
+          <p className="text-red-600">
+            Please log in to view your reservations.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -61,7 +41,7 @@ export function EventsList() {
         <div className="container max-w-6xl mx-auto px-4">
           <div className="text-center">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading events...</p>
+            <p className="mt-4 text-gray-600">Loading reservations...</p>
           </div>
         </div>
       </div>
@@ -75,7 +55,7 @@ export function EventsList() {
           <div className="text-center">
             <div className="bg-red-50 border border-red-200 rounded-lg p-6">
               <h3 className="text-lg font-semibold text-red-800 mb-2">
-                Error Loading Events
+                Error Loading Reservations
               </h3>
               <p className="text-red-600">
                 {error instanceof Error
@@ -94,25 +74,24 @@ export function EventsList() {
       <div className="container max-w-6xl mx-auto px-4">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-orange-600 bg-clip-text text-transparent">
-            Events
+            My Reservations
           </h1>
           <p className="mt-2 text-gray-600">
-            Discover and explore all available events
+            View and manage your event reservations
           </p>
         </div>
-
         <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
           <div className="space-y-4">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold text-gray-900">
-                {events?.length} Event{events?.length !== 1 ? "s" : ""} Found
+                {reservations?.length} Reservation
+                {reservations?.length !== 1 ? "s" : ""} Found
               </h2>
             </div>
-
             <div className="grid gap-6">
-              {events?.map((event) => (
+              {reservations?.map((reservation) => (
                 <div
-                  key={event.id}
+                  key={reservation.id}
                   className="border border-gray-200 rounded-lg p-6 hover:shadow-md transition-shadow"
                 >
                   <div className="flex justify-between items-start mb-4">
@@ -123,141 +102,139 @@ export function EventsList() {
                         </div>
                         <div>
                           <h3 className="font-semibold text-xl text-gray-900">
-                            {event.name}
+                            {reservation.event?.name}
                           </h3>
                           <div className="flex items-center space-x-2 mt-1">
-                            <span
-                              className={`px-2 py-1 text-xs font-medium rounded-full border ${getStatusColor(
-                                event.status
-                              )}`}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={async () => {
+                                if (reservation.isCancelled) return;
+                                setCancellingReservationId(reservation.id);
+                                try {
+                                  await cancelReservation.mutateAsync(
+                                    reservation.id
+                                  );
+                                  toast.success("Reservation cancelled");
+                                } catch (err: unknown) {
+                                  const message =
+                                    typeof err === "object" &&
+                                    err !== null &&
+                                    "message" in err
+                                      ? String(
+                                          (err as { message?: string }).message
+                                        )
+                                      : "Failed to cancel";
+                                  toast.error(message);
+                                } finally {
+                                  setCancellingReservationId(null);
+                                }
+                              }}
+                              disabled={
+                                reservation.isCancelled ||
+                                cancellingReservationId === reservation.id
+                              }
+                              className={
+                                reservation.isCancelled
+                                  ? "opacity-50 cursor-not-allowed"
+                                  : ""
+                              }
                             >
-                              {event.status}
-                            </span>
+                              {cancellingReservationId === reservation.id
+                                ? "Cancelling..."
+                                : reservation.isCancelled
+                                ? "Cancelled"
+                                : "Cancel"}
+                            </Button>
                           </div>
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        onClick={() => navigate(`/events/${event.id}/edit`)}
-                        variant="outline"
-                        size="sm"
-                        className="text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-300"
-                      >
-                        <Edit3 className="w-4 h-4" /> Edit
-                      </Button>
-                      <Button
-                        onClick={() =>
-                          navigate(`/event/reservations/${event.id}`)
-                        }
-                        variant="ghost"
-                        size="sm"
-                        className="text-gray-700 hover:bg-gray-100"
-                      >
-                        Reservations
-                      </Button>
-                      <Button
-                        onClick={() => handleDeleteEvent(event.id, event.name)}
-                        variant="outline"
-                        size="sm"
-                        className="text-red-600 border-red-200 hover:bg-red-50 hover:border-red-300"
-                        disabled={deletingEventId === event.id}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                        {deletingEventId === event.id
-                          ? "Deleting..."
-                          : "Delete"}
-                      </Button>
-                    </div>
                   </div>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                     <div className="flex items-center space-x-2">
                       <Calendar className="w-4 h-4 text-gray-500" />
                       <div>
                         <p className="text-sm text-gray-500">Start Date</p>
                         <p className="text-gray-900 font-medium">
-                          {format(new Date(event.startDate), "MMM dd, yyyy")}
+                          {reservation.event?.startDate
+                            ? format(
+                                new Date(reservation.event.startDate),
+                                "MMM dd, yyyy"
+                              )
+                            : "-"}
                         </p>
                       </div>
                     </div>
-
                     <div className="flex items-center space-x-2">
                       <Calendar className="w-4 h-4 text-gray-500" />
                       <div>
                         <p className="text-sm text-gray-500">End Date</p>
                         <p className="text-gray-900 font-medium">
-                          {format(new Date(event.endDate), "MMM dd, yyyy")}
+                          {reservation.event?.endDate
+                            ? format(
+                                new Date(reservation.event.endDate),
+                                "MMM dd, yyyy"
+                              )
+                            : "-"}
                         </p>
                       </div>
                     </div>
-
                     <div className="flex items-center space-x-2">
                       <MapPin className="w-4 h-4 text-gray-500" />
                       <div>
                         <p className="text-sm text-gray-500">Location</p>
                         <p className="text-gray-900 font-medium">
-                          {event.city}, {event.country}
+                          {reservation.event?.city},{" "}
+                          {reservation.event?.country}
                         </p>
                       </div>
                     </div>
-
                     <div className="flex items-center space-x-2">
                       <MapPin className="w-4 h-4 text-gray-500" />
                       <div>
                         <p className="text-sm text-gray-500">Venue</p>
                         <p className="text-gray-900 font-medium">
-                          {event.venue}
+                          {reservation.event?.venue}
                         </p>
                       </div>
                     </div>
                   </div>
-
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                    <div className="flex items-center space-x-2">
-                      <Users className="w-4 h-4 text-gray-500" />
-                      <div>
-                        <p className="text-sm text-gray-500">Max Capacity</p>
-                        <p className="text-gray-900 font-medium">
-                          {event.maxCapacity.toLocaleString()} people{" "}
-                          <span className="text-sm text-gray-500">
-                            (
-                            {Math.max(
-                              0,
-                              event.maxCapacity - (event.reservationCount ?? 0)
-                            )}{" "}
-                            remaining )
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-
                     <div className="flex items-center space-x-2">
                       <DollarSign className="w-4 h-4 text-gray-500" />
                       <div>
                         <p className="text-sm text-gray-500">Price</p>
                         <p className="text-gray-900 font-medium">
-                          ${Number(event?.price || 0).toFixed(2)}
+                          ${Number(reservation?.price || 0).toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Trash2 className="w-4 h-4 text-gray-500" />
+                      <div>
+                        <p className="text-sm text-gray-500">Cancelled</p>
+                        <p className="text-gray-900 font-medium">
+                          {reservation.isCancelled ? "Yes" : "No"}
                         </p>
                       </div>
                     </div>
                   </div>
-
                   <div className="mb-4">
-                    <p className="text-sm text-gray-500 mb-1">Description</p>
-                    <p className="text-gray-900 line-clamp-3">
-                      {event.description}
+                    <p className="text-sm text-gray-500 mb-1">Reserved By</p>
+                    <p className="text-gray-900 font-medium">
+                      {reservation.user?.firstName} {reservation.user?.lastName}{" "}
+                      ({reservation.user?.email})
                     </p>
                   </div>
-
                   <div className="flex justify-between items-center text-sm text-gray-500">
                     <p>
                       Created:{" "}
-                      {format(new Date(event.createdAt), "MMM dd, yyyy")}
+                      {format(new Date(reservation.createdAt), "MMM dd, yyyy")}
                     </p>
                     <p>
                       Updated:{" "}
-                      {format(new Date(event.updatedAt), "MMM dd, yyyy")}
+                      {format(new Date(reservation.updatedAt), "MMM dd, yyyy")}
                     </p>
                   </div>
                 </div>

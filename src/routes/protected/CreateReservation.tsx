@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useGetEventById } from "@/hooks/queries/events/useGetEventById";
 import { useCreateReservation } from "@/hooks/mutations/reservation/useCreateReservation";
@@ -34,6 +34,28 @@ export function CreateReservation() {
 
   const createReservation = useCreateReservation();
 
+  const remainingSeats = event
+    ? Math.max(0, event.maxCapacity - (event.reservationCount ?? 0))
+    : 0;
+
+  useEffect(() => {
+    if (remainingSeats === 0) {
+      setQuantity(0);
+      return;
+    }
+
+    if (quantity < 1) {
+      setQuantity(1);
+      return;
+    }
+
+    if (quantity > remainingSeats) {
+      setQuantity(remainingSeats);
+    }
+    // only run when remainingSeats changes
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remainingSeats]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -44,6 +66,13 @@ export function CreateReservation() {
 
     if (quantity < 1) {
       toast.error("Quantity must be at least 1");
+      return;
+    }
+
+    if (event && quantity > remainingSeats) {
+      toast.error(
+        `Quantity cannot exceed remaining seats of ${remainingSeats}`
+      );
       return;
     }
 
@@ -253,15 +282,27 @@ export function CreateReservation() {
                   <Input
                     id="quantity"
                     type="number"
-                    min="1"
-                    max="10"
+                    min={String(remainingSeats > 0 ? 1 : 0)}
+                    max={String(remainingSeats)}
                     value={quantity}
-                    onChange={(e) => setQuantity(Number(e.target.value))}
+                    onChange={(e) => {
+                      if (remainingSeats <= 0) {
+                        setQuantity(0);
+                        return;
+                      }
+                      const val = Number(e.target.value) || 1;
+                      const clamped = Math.max(
+                        1,
+                        Math.min(val, remainingSeats)
+                      );
+                      setQuantity(clamped);
+                    }}
                     className="w-full"
                     required
+                    disabled={remainingSeats <= 0}
                   />
                   <p className="text-sm text-gray-500">
-                    Maximum 10 reservations per user
+                    Remaining tickets: {remainingSeats.toLocaleString()}
                   </p>
                 </div>
 
@@ -285,11 +326,15 @@ export function CreateReservation() {
                     type="submit"
                     className="w-full bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
                     disabled={
-                      createReservation.isPending || event.status !== "OPEN"
+                      createReservation.isPending ||
+                      event.status !== "OPEN" ||
+                      remainingSeats <= 0
                     }
                   >
                     {createReservation.isPending
                       ? "Creating Reservations..."
+                      : remainingSeats <= 0
+                      ? "Sold Out"
                       : `Create ${quantity} Reservation${
                           quantity > 1 ? "s" : ""
                         }`}

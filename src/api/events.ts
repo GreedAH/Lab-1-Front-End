@@ -28,6 +28,7 @@ export interface Event {
   price: number;
   createdAt: string;
   updatedAt: string;
+  reservationCount?: number;
 }
 
 export const createEvent = (data: EventCreateInput) =>

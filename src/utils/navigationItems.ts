@@ -43,6 +43,6 @@ export const navigationItems: RoleNavItems = {
   ],
   CLIENT: [
     { label: "Events", href: "/client/events" },
-    { label: "Reservations", href: "/dashboard" },
+    { label: "Reservations", href: "/reservations" },
   ],
 };

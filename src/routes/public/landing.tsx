@@ -109,13 +109,25 @@ export function Landing() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Button
-                          onClick={() => handleReserve(event.id)}
-                          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
-                          size="sm"
-                        >
-                          Reserve
-                        </Button>
+                        {event.maxCapacity - (event.reservationCount ?? 0) <=
+                        0 ? (
+                          <Button
+                            size="sm"
+                            disabled
+                            className="bg-gray-300 text-gray-700"
+                          >
+                            Sold Out
+                          </Button>
+                        ) : (
+                          <Button
+                            onClick={() => handleReserve(event.id)}
+                            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white"
+                            size="sm"
+                            disabled={event.status !== "OPEN"}
+                          >
+                            Reserve
+                          </Button>
+                        )}
                       </div>
                     </div>
 
@@ -167,7 +179,16 @@ export function Landing() {
                         <div>
                           <p className="text-sm text-gray-500">Max Capacity</p>
                           <p className="text-gray-900 font-medium">
-                            {event.maxCapacity.toLocaleString()} people
+                            {event.maxCapacity.toLocaleString()} people{" "}
+                            <span className="text-sm text-gray-500">
+                              (
+                              {Math.max(
+                                0,
+                                event.maxCapacity -
+                                  (event.reservationCount ?? 0)
+                              )}{" "}
+                              remaining )
+                            </span>
                           </p>
                         </div>
                       </div>

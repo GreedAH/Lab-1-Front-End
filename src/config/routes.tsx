@@ -12,8 +12,26 @@ import { EventsList } from "@/routes/protected/EventsList";
 import EditEvent from "@/routes/protected/EditEvent";
 import { ClientEventsList } from "@/routes/protected/ClientEventsList";
 import { CreateReservation } from "@/routes/protected/CreateReservation";
+import { ClientReservationsList } from "@/routes/protected/ClientReservationsList";
+import { useNavigate } from "react-router-dom";
+import { useUser } from "@/contexts/UserContext";
+import { useEffect } from "react";
+
+const ReservationsRedirect = () => {
+  const { user } = useUser();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (user?.id) {
+      navigate(`/reservations/${user.id}`, { replace: true });
+    }
+  }, [user, navigate]);
+
+  return <div />;
+};
 import { Landing } from "@/routes/public/landing";
 import SignUp from "@/components/signUp";
+import { EventReservationsList } from "@/routes/protected/EventReservationsList";
 
 // Public routes - accessible to everyone
 export const publicRoutes: RouteObject[] = [
@@ -112,6 +130,32 @@ export const privateRoutes: RouteObject[] = [
     element: (
       <ProtectedRoute allowedRoles={[Role.CLIENT]}>
         <CreateReservation />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/reservations",
+    element: (
+      <ProtectedRoute allowedRoles={[Role.CLIENT]}>
+        <ReservationsRedirect />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/reservations/:userId",
+    element: (
+      <ProtectedRoute allowedRoles={[Role.CLIENT]}>
+        <ClientReservationsList />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: "/event/reservations/:id",
+    element: (
+      <ProtectedRoute
+        allowedRoles={[Role.SUPER_ADMIN, Role.ADMIN, Role.CLIENT]}
+      >
+        <EventReservationsList />
       </ProtectedRoute>
     ),
   },
