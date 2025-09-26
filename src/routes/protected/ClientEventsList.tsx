@@ -1,14 +1,18 @@
 import { useGetAllEventsPublic } from "@/hooks/queries/events/useGetAllEventsPublic";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Users, DollarSign } from "lucide-react";
+import { Calendar, MapPin, Users, DollarSign, Star } from "lucide-react";
 import { format } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "@/contexts/UserContext";
+import { useState } from "react";
+import ReviewForm from "@/components/reviews/ReviewForm";
+import { EventStatus } from "@/types/enums";
 
 export function ClientEventsList() {
   const { data: events, isLoading, error } = useGetAllEventsPublic();
   const navigate = useNavigate();
   const { user } = useUser();
+  const [openReviewFor, setOpenReviewFor] = useState<number | null>(null);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -133,6 +137,21 @@ export function ClientEventsList() {
                           Reserve
                         </Button>
                       )}
+                      {event.status === EventStatus.DONE && (
+                        <div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              setOpenReviewFor((prev) =>
+                                prev === event.id ? null : event.id
+                              )
+                            }
+                          >
+                            Submit review
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -215,6 +234,51 @@ export function ClientEventsList() {
                     </p>
                   </div>
 
+                  {/* Reviews (render all available reviews on the event) */}
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-500 mb-2">Reviews</p>
+                    {event.reviews && event.reviews.length > 0 ? (
+                      <div className="space-y-3">
+                        {event.reviews.map((r) => (
+                          <div key={r.id} className="border rounded p-3">
+                            <div className="flex items-center justify-between">
+                              <div className="font-medium">
+                                {r.user
+                                  ? `${r.user.firstName} ${r.user.lastName}`
+                                  : "Anonymous"}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {Array.from({ length: 5 }).map((_, i) => {
+                                  const idx = i + 1;
+                                  return (
+                                    <Star
+                                      key={idx}
+                                      className={`w-4 h-4 ${
+                                        idx <= r.rating
+                                          ? "text-yellow-400"
+                                          : "text-gray-300"
+                                      }`}
+                                    />
+                                  );
+                                })}
+                                <span className="text-sm text-gray-600 ml-2">
+                                  {r.rating} / 5
+                                </span>
+                              </div>
+                            </div>
+                            {r.reviewText && (
+                              <p className="mt-2 text-sm text-gray-700">
+                                {r.reviewText}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-600">No reviews yet</p>
+                    )}
+                  </div>
+
                   <div className="flex justify-between items-center text-sm text-gray-500">
                     <p>
                       Created:{" "}
@@ -225,6 +289,12 @@ export function ClientEventsList() {
                       {format(new Date(event.updatedAt), "MMM dd, yyyy")}
                     </p>
                   </div>
+                  {openReviewFor === event.id && (
+                    <ReviewForm
+                      eventId={event.id}
+                      onDone={() => setOpenReviewFor(null)}
+                    />
+                  )}
                 </div>
               ))}
             </div>

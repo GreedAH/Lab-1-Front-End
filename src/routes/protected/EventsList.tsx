@@ -12,6 +12,8 @@ import {
 import { format } from "date-fns";
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { Star } from "lucide-react";
+import { useDeleteReview } from "@/hooks/mutations/review/useDeleteReview";
 import { toast } from "sonner";
 import type { ApiError } from "@/lib/api";
 
@@ -20,6 +22,7 @@ export function EventsList() {
   const deleteEvent = useDeleteEvent();
   const [deletingEventId, setDeletingEventId] = useState<number | null>(null);
   const navigate = useNavigate();
+  const deleteReviewMutation = useDeleteReview();
 
   const handleDeleteEvent = async (eventId: number, eventName: string) => {
     if (
@@ -248,6 +251,73 @@ export function EventsList() {
                     <p className="text-gray-900 line-clamp-3">
                       {event.description}
                     </p>
+                  </div>
+
+                  {/* Reviews (render all available reviews on the event) */}
+                  <div className="mb-4">
+                    <p className="text-sm text-gray-500 mb-2">Reviews</p>
+                    {event.reviews && event.reviews.length > 0 ? (
+                      <div className="space-y-3">
+                        {event.reviews.map((r) => (
+                          <div key={r.id} className="border rounded p-3">
+                            <div className="flex items-center justify-between">
+                              <div className="font-medium">
+                                {r.user
+                                  ? `${r.user.firstName} ${r.user.lastName}`
+                                  : "Anonymous"}
+                              </div>
+                              <div className="flex items-center gap-1">
+                                {Array.from({ length: 5 }).map((_, i) => {
+                                  const idx = i + 1;
+                                  return (
+                                    <Star
+                                      key={idx}
+                                      className={`w-4 h-4 ${
+                                        idx <= r.rating
+                                          ? "text-yellow-400"
+                                          : "text-gray-300"
+                                      }`}
+                                    />
+                                  );
+                                })}
+                                <span className="text-sm text-gray-600 ml-2">
+                                  {r.rating} / 5
+                                </span>
+                              </div>
+                              <div className="ml-3">
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={async () => {
+                                    try {
+                                      await deleteReviewMutation.mutateAsync(
+                                        r.id
+                                      );
+                                      toast.success("Review removed");
+                                    } catch (err: unknown) {
+                                      const message =
+                                        err instanceof Error
+                                          ? err.message
+                                          : "Failed to remove review";
+                                      toast.error(message);
+                                    }
+                                  }}
+                                >
+                                  Remove Review
+                                </Button>
+                              </div>
+                            </div>
+                            {r.reviewText && (
+                              <p className="mt-2 text-sm text-gray-700">
+                                {r.reviewText}
+                              </p>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-gray-600">No reviews yet</p>
+                    )}
                   </div>
 
                   <div className="flex justify-between items-center text-sm text-gray-500">

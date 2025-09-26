@@ -1,5 +1,6 @@
 import { api } from "@/lib/api";
 import { EventStatus } from "@/types/enums";
+import type { ReviewResponse } from "@/api/review";
 
 export interface EventCreateInput {
   name: string;
@@ -29,6 +30,9 @@ export interface Event {
   createdAt: string;
   updatedAt: string;
   reservationCount?: number;
+  // optional review fields provided by newer backend endpoints
+  totalReviews?: number;
+  reviews?: ReviewResponse[];
 }
 
 export const createEvent = (data: EventCreateInput) =>
@@ -100,6 +104,7 @@ export const deleteEvent = (id: number) =>
 export interface GetAllEventsPublicParams {
   country?: string;
   city?: string;
+  reviewLimit?: number;
 }
 
 export const getAllEventsSortedByStatus = (
@@ -108,6 +113,8 @@ export const getAllEventsSortedByStatus = (
   const searchParams = new URLSearchParams();
   if (params?.country) searchParams.append("country", params.country);
   if (params?.city) searchParams.append("city", params.city);
+  if (typeof params?.reviewLimit === "number")
+    searchParams.append("reviewLimit", String(params.reviewLimit));
 
   const queryString = searchParams.toString();
   const endpoint = queryString
