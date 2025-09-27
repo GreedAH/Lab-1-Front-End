@@ -41,3 +41,10 @@ export const refreshToken = (token: string) =>
     method: "POST",
     data: { refreshToken: token },
   });
+
+export const forgotPassword = (id: number, password: string) =>
+  api(`/auth/forgot-password/${id}`, {
+    method: "POST",
+    data: { password },
+    // no requiresAuth
+  });

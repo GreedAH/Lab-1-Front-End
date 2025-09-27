@@ -64,3 +64,9 @@ export const updateUser = (id: number, data: UserUpdateInput) =>
     data,
     requiresAuth: true,
   });
+
+export const findUserByEmail = (email: string) =>
+  api<User>(`/users/find-by-email`, {
+    method: "POST",
+    data: { email },
+  });

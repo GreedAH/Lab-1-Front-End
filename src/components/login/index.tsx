@@ -131,6 +131,15 @@ function LogIn() {
             >
               {isLoggingIn ? "Logging in..." : "Login"}
             </Button>
+            <div className="text-right mt-2">
+              <button
+                type="button"
+                className="text-sm text-purple-600 hover:underline"
+                onClick={() => navigate("/forget-password")}
+              >
+                Forget password
+              </button>
+            </div>
           </form>
         </div>
       </div>

@@ -32,6 +32,7 @@ const ReservationsRedirect = () => {
 import { Landing } from "@/routes/public/landing";
 import SignUp from "@/components/signUp";
 import { EventReservationsList } from "@/routes/protected/EventReservationsList";
+import ForgotPassword from "@/components/forgotPassword";
 
 // Public routes - accessible to everyone
 export const publicRoutes: RouteObject[] = [
@@ -42,6 +43,10 @@ export const publicRoutes: RouteObject[] = [
   {
     path: "/login",
     element: <LogIn />,
+  },
+  {
+    path: "/forget-password",
+    element: <ForgotPassword />,
   },
   {
     path: "/sign-up",
